@@ -9,7 +9,7 @@ import com.hotlist.utils.HotContext;
 import com.hotlist.utils.HotSpringBeanUtils;
 import com.hotlist.utils.HotUtil;
 import lombok.Data;
-import org.springframework.data.redis.core.BoundHashOperations;
+import org.springframework.data.redis.core.BoundValueOperations;
 
 import java.util.List;
 import java.util.Map;
@@ -66,11 +66,6 @@ public class HotSiteEntity {
         return HotUtil.stringJoin("hot", "site", HotContext.getCurrentUser().getUserName(), alias, hotRankList, HotUtil.categoryJoin(hotRankListCategory), "pc");
     }
 
-    @JSONField(serialize = false)
-    public String getResourceKey() {
-        return HotUtil.stringJoin(this.getSaveKey(), "res");
-    }
-
     @JsonIgnore
     @JSONField(serialize = false)
     public HotResource getParserBeanObject() {
@@ -93,22 +88,21 @@ public class HotSiteEntity {
     }
 
     @JSONField(serialize = false)
-    public static String getResourceHashKey() {
+    public static String getResourceKey() {
         return HotUtil.stringJoin("hot", "site", HotContext.getCurrentUser().getUserName(), "res");
     }
 
     public void saveByResource(List<Object> parsedResource, int timeout, TimeUnit timeUnit) {
-        String objKey = HotUtil.stringJoin(alias, hotRankList, HotUtil.categoryJoin(hotRankListCategory), "pc");
-        BoundHashOperations<String, Object, Object> hashOperations = HotSpringBeanUtils.getRedisTemplate().boundHashOps(getResourceHashKey());
-        hashOperations.put(objKey, parsedResource);
-        hashOperations.expire(timeout, timeUnit);
+        String objKey = HotUtil.stringJoin(getResourceKey(), alias, hotRankList, HotUtil.categoryJoin(hotRankListCategory), "pc");
+        BoundValueOperations<String, Object> valueOps = HotSpringBeanUtils.getRedisTemplate().boundValueOps(objKey);
+        valueOps.set(parsedResource, timeout, timeUnit);
     }
 
     @SuppressWarnings("unchecked")
     @JSONField(serialize = false)
     public List<Map<String, String>> getResource() {
-        String objKey = HotUtil.stringJoin(alias, hotRankList, HotUtil.categoryJoin(hotRankListCategory), "pc");
-        return (List<Map<String, String>>) HotSpringBeanUtils.getRedisTemplate().opsForHash().get(getResourceHashKey(), objKey);
+        String objKey = HotUtil.stringJoin(getResourceKey(), alias, hotRankList, HotUtil.categoryJoin(hotRankListCategory), "pc");
+        return (List<Map<String, String>>) HotSpringBeanUtils.getRedisTemplate().opsForValue().get(objKey);
     }
 
 

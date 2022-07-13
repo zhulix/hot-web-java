@@ -5,14 +5,12 @@ import com.hotlist.entity.HotSiteEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.seimicrawler.xpath.JXDocument;
 import org.seimicrawler.xpath.JXNode;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
@@ -20,7 +18,8 @@ public class DocumentHotResource extends HotResourceBase {
 
     @Override
     public void save(HotResultWrapper hotResultWrapper) {
-//        super.save(hotResultWrapper);
+        HotSiteEntity hotSite = hotResultWrapper.getHotSite();
+        hotSite.saveByResource(hotResultWrapper.getParsedResourceAsList(), 5, TimeUnit.MINUTES);
     }
 
     @Override
