@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: hot-list-java
+  redis:
+    host: localhost
+    port: 6379
+    database: 1
+
+server:
+  port: 8081
+token:
+  privateKey: '1asd]uft87i3r,mnIO&^DF(@#'
