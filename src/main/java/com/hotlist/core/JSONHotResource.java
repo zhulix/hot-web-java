@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.hotlist.core.filter.HotResultWrapper;
 import com.hotlist.entity.HotSiteEntity;
+import lombok.extern.slf4j.Slf4j;
 import ognl.Ognl;
 import ognl.OgnlException;
 import org.apache.commons.lang3.StringUtils;
@@ -14,6 +15,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 public class JSONHotResource extends HotResourceBase {
 
@@ -88,10 +90,11 @@ public class JSONHotResource extends HotResourceBase {
         return ans;
     }
 
-    private String parseJsonKey(String resourceStr, Object obj) {
+    private String parseJsonKey(String resourceStr, JSONObject obj) {
         try {
-            return (String) Ognl.getValue(obj, JSON.parseObject(resourceStr));
-        } catch (OgnlException e) {
+            return Ognl.getValue(resourceStr, obj).toString();
+        } catch (Exception e) {
+            log.error("资源：{}, 解析键：{}", resourceStr, obj);
             throw new RuntimeException(e);
         }
     }
