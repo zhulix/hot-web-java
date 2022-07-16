@@ -6,6 +6,7 @@ import com.hotlist.common.dto.SiteShowSchemaDto;
 import com.hotlist.common.vo.HotCardSiteWrapperVo;
 import com.hotlist.common.vo.UserVo;
 import com.hotlist.entity.HotSiteEntity;
+import com.hotlist.entity.UserEntity;
 import com.hotlist.service.ManagerService;
 import com.hotlist.service.UserService;
 import com.hotlist.utils.HotContext;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/u")
@@ -60,6 +62,7 @@ public class ManagerController {
     @GetMapping("/info")
     public R info() {
         UserVo userVo = new UserVo();
+        if (Objects.isNull(HotContext.getCurrentUser())) HotContext.setDefaultUser();
         BeanUtils.copyProperties(HotContext.getCurrentUser(), userVo);
         return R.ok().put("data", userVo);
     }

@@ -9,11 +9,13 @@ import com.hotlist.utils.HotContext;
 import com.hotlist.utils.HotSpringBeanUtils;
 import com.hotlist.utils.HotUtil;
 import lombok.Data;
-import org.springframework.data.redis.core.BoundValueOperations;
+import org.springframework.data.redis.core.BoundListOperations;
+import org.springframework.data.redis.core.DefaultTypedTuple;
+import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.util.CollectionUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
 public class HotSiteEntity {
@@ -92,19 +94,67 @@ public class HotSiteEntity {
         return HotUtil.stringJoin("hot", "site", HotContext.getCurrentUser().getUserName(), "res");
     }
 
-    public void saveByResource(List<Object> parsedResource, int timeout, TimeUnit timeUnit) {
+    @SuppressWarnings("unchecked")
+    public void saveByResource(List<Object> parsedResource) {
         String objKey = HotUtil.stringJoin(getResourceKey(), alias, hotRankList, HotUtil.categoryJoin(hotRankListCategory), "pc");
-        BoundValueOperations<String, Object> valueOps = HotSpringBeanUtils.getRedisTemplate().boundValueOps(objKey);
-        valueOps.set(parsedResource, timeout, timeUnit);
+        Map<String, Object> map = new HashMap<>();
+        parsedResource.forEach(item -> {
+            Map<String, String> content = (Map<String, String>) item;
+            map.put(content.getOrDefault("title", ""), content);
+        });
+
+        BoundListOperations<String, Object> listOps = HotSpringBeanUtils.getRedisTemplate().boundListOps(objKey);
+        // TODO 这里目前是取redis中list所有元素，和当前内容作对比
+        List<Object> range = listOps.range(0, -1);
+        if (!CollectionUtils.isEmpty(range)) {
+            for (Object o : range) {
+                Map<String, String> content = (Map<String, String>) o;
+                String title = content.get("title");
+                // 跟当前的获取的content作对比
+                if (map.containsKey(title)) {
+                    listOps.remove(1, content);
+                }
+            }
+        }
+
+        // 反转保存
+        Object[] objects = new Object[parsedResource.size()];
+        for (int i = 0; i < parsedResource.size(); i++) objects[i] = parsedResource.get(parsedResource.size() - i - 1);
+        listOps.leftPushAll(objects);
+
+        // 记录刷新时间
+        HotSpringBeanUtils.stringRedisTemplate.opsForValue()
+                .set("refresh:" + objKey, String.valueOf(System.currentTimeMillis()));
     }
+
+//    @SuppressWarnings("unchecked")
+//    @Deprecated
+//    public static Set<ZSetOperations.TypedTuple<Object>> resolveParsedResource(List<Object> parsedResource) {
+//        List<ZSetOperations.TypedTuple<Object>> score = parsedResource.stream().map(res -> {
+//            Map<String, String> content = (Map<String, String>) res;
+//            return new DefaultTypedTuple<Object>(content.get("title") + "_" + content.get("score"), Double.valueOf(content.get("score")));
+//        }).collect(Collectors.toList());
+//
+//        Set<ZSetOperations.TypedTuple<Object>> ans = new HashSet<>(score.size());
+//        ans.addAll(score);
+//        return ans;
+//    }
+
 
     @SuppressWarnings("unchecked")
     @JSONField(serialize = false)
+    @JsonIgnore
     public List<Map<String, String>> getResource() {
         String objKey = HotUtil.stringJoin(getResourceKey(), alias, hotRankList, HotUtil.categoryJoin(hotRankListCategory), "pc");
-        return (List<Map<String, String>>) HotSpringBeanUtils.getRedisTemplate().opsForValue().get(objKey);
+        // 当前站点最后更新时间
+        String refreshTimestamp = HotSpringBeanUtils.stringRedisTemplate.opsForValue().get("refresh:" + objKey);
+        if (Objects.isNull(refreshTimestamp)) return null;
+
+        BoundListOperations<String, Object> listOps = HotSpringBeanUtils.redisTemplate.boundListOps(objKey);
+        List<Object> range = listOps.range(0, 49);
+        if (!CollectionUtils.isEmpty(range))
+            return range.stream().map(item -> (Map<String, String>) item).collect(Collectors.toList());
+        return null;
     }
-
-
 
 }

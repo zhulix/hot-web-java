@@ -3,14 +3,17 @@ package com.hotlist.core;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.hotlist.config.HotRabbitConfig;
 import com.hotlist.core.filter.HotResultWrapper;
 import com.hotlist.entity.HotSiteEntity;
 import lombok.extern.slf4j.Slf4j;
 import ognl.Ognl;
 import ognl.OgnlException;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -19,13 +22,15 @@ import java.util.stream.Collectors;
 @Component
 public class JSONHotResource extends HotResourceBase {
 
+    @Resource
+    private RabbitTemplate rabbitTemplate;
+
     @Override
     public void save(HotResultWrapper hotResultWrapper) {
         HotSiteEntity hotSite = hotResultWrapper.getHotSite();
-        hotSite.saveByResource(hotResultWrapper.getParsedResourceAsList(), 5, TimeUnit.MINUTES);
-//        redisTemplate.opsForValue().set(hotSite.getResourceKey(),
-//                hotResultWrapper.getParsedResource(),
-//                5, TimeUnit.MINUTES);
+        hotSite.saveByResource(hotResultWrapper.getParsedResourceAsList());
+        // TODO
+        rabbitTemplate.convertAndSend(HotRabbitConfig.RESOURCE_EXCHANGE, "resource.create", hotSite);
     }
 
     @Override
@@ -57,15 +62,13 @@ public class JSONHotResource extends HotResourceBase {
 
     @Override
     public void resolve(HotResultWrapper resultWrapper, HotResourceParser hotResourceParser) {
-//        List<Object> parsedResource = resultWrapper.getParsedResource();
-
+        // 需要解析的内容
         Map<String, String> parseContent = hotResourceParser.getParseContent();
-//        Map<String, String> map = new HashMap<>(resultWrapper.getParsedResourceAsList().size());
-        List<Object> maps = getMaps(parseContent, resultWrapper);
-        resultWrapper.setParsedResource(maps);
+        List<Object> contentByMapping = getContentByMapping(parseContent, resultWrapper);
+        resultWrapper.setParsedResource(contentByMapping);
     }
 
-    private List<Object> getMaps(Map<String, String> parseContent, HotResultWrapper hotResultWrapper) {
+    private List<Object> getContentByMapping(Map<String, String> parseContent, HotResultWrapper hotResultWrapper) {
         HotSiteEntity hotSite = hotResultWrapper.getHotSite();
         HotSiteEntity.ShowConfig showConfig = hotSite.getShowConfig();
         Map<String, String> configMap = hotSite.getShowConfig().getConfig();
@@ -75,7 +78,7 @@ public class JSONHotResource extends HotResourceBase {
         jsonObjects.forEach(item -> {
             JSONObject json = (JSONObject) item;
             Map<String, String> content = new HashMap<>();
-
+//            content.put("score", String.valueOf(System.currentTimeMillis()));
             parseContent.keySet().forEach(k -> {
                 String key = parseContent.get(k);
 

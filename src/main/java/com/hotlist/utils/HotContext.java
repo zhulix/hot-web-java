@@ -1,5 +1,6 @@
 package com.hotlist.utils;
 
+import com.alibaba.fastjson2.JSON;
 import com.hotlist.entity.UserEntity;
 
 public class HotContext {
@@ -14,6 +15,11 @@ public class HotContext {
 
     public static void setUser(UserEntity user) {
         USER_ENTITY_THREAD_LOCAL.set(user);
+    }
+
+    public static void setDefaultUser() {
+        Object xin = HotSpringBeanUtils.redisTemplate.opsForHash().get("hot:user", "xin");
+        USER_ENTITY_THREAD_LOCAL.set(JSON.to(UserEntity.class, xin));
     }
 
 }

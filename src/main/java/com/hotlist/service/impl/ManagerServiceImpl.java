@@ -39,16 +39,12 @@ public class ManagerServiceImpl implements ManagerService {
 
     @Override
     public List<HotCardSiteWrapperVo> getMySiteResourceCard() {
-        UserEntity currentUser = HotContext.getCurrentUser();
-        if (Objects.isNull(currentUser)) {
-            // 没有就默认放一个
-            HotContext.setUser(new UserEntity().setUserName("xin"));
-        }
+        // 没有就默认放一个
+        if (Objects.isNull(HotContext.getCurrentUser())) HotContext.setDefaultUser();
 
         List<HotSiteEntity> mySite = getMySite();
-        if (CollectionUtils.isEmpty(mySite)) {
-            return null;
-        }
+        if (CollectionUtils.isEmpty(mySite)) return null;
+
         mySite = mySite.stream().filter(HotSiteEntity::getAvailable).collect(Collectors.toList());
         return hotResourceService.getResourceByHotSites(mySite);
     }

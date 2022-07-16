@@ -60,6 +60,13 @@ public class HotResourceServiceImpl implements HotResourceService {
         return result;
     }
 
+    @Override
+    public void refreshResource(HotSiteEntity site) {
+        HotSiteInfoWrapper wrapper = new HotSiteInfoWrapper(site);
+        HotResource parserBeanObject = site.getParserBeanObject();
+        parserBeanObject.fetch(wrapper);
+    }
+
     public List<Map<String, String>> getResourceByHotSite(HotSiteEntity hotSite) {
         List<Map<String, String>> obj = hotSite.getResource();
         if (obj != null) return obj;

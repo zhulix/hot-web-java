@@ -1,5 +1,6 @@
 package com.hotlist.core;
 
+import com.hotlist.config.HotRabbitConfig;
 import com.hotlist.core.filter.HotResultWrapper;
 import com.hotlist.entity.HotSiteEntity;
 import lombok.extern.slf4j.Slf4j;
@@ -7,8 +8,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.seimicrawler.xpath.JXDocument;
 import org.seimicrawler.xpath.JXNode;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -16,10 +19,15 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class DocumentHotResource extends HotResourceBase {
 
+    @Resource
+    private RabbitTemplate rabbitTemplate;
+
     @Override
     public void save(HotResultWrapper hotResultWrapper) {
         HotSiteEntity hotSite = hotResultWrapper.getHotSite();
-        hotSite.saveByResource(hotResultWrapper.getParsedResourceAsList(), 5, TimeUnit.MINUTES);
+        hotSite.saveByResource(hotResultWrapper.getParsedResourceAsList());
+        // TODO
+        rabbitTemplate.convertAndSend(HotRabbitConfig.RESOURCE_EXCHANGE, "resource.create", hotSite);
     }
 
     @Override

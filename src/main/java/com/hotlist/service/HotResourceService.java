@@ -9,4 +9,6 @@ public interface HotResourceService {
     Object getResourceByKey(String key);
 
     List<HotCardSiteWrapperVo> getResourceByHotSites(List<HotSiteEntity> mySites);
+
+    void refreshResource(HotSiteEntity site);
 }
