@@ -22,4 +22,8 @@ public class HotContext {
         USER_ENTITY_THREAD_LOCAL.set(JSON.to(UserEntity.class, xin));
     }
 
+    public static void removeUser() {
+        USER_ENTITY_THREAD_LOCAL.remove();
+    }
+
 }

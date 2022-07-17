@@ -72,6 +72,7 @@ public class HotResourceServiceImpl implements HotResourceService {
         if (obj != null) return obj;
         HotResource hotResource = hotSite.getParserBeanObject();
         HotSiteInfoWrapper wrapper = new HotSiteInfoWrapper(hotSite);
+        // 请求资源，并投递刷新消息（死信队列）
         List<Object> fetch = hotResource.fetch(wrapper);
         return fetch.stream().map(o -> (Map<String, String>) o).collect(Collectors.toList());
     }

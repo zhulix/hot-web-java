@@ -3,18 +3,20 @@ package com.hotlist.entity;
 import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hotlist.common.HotRankListCategory;
+import com.hotlist.common.to.MessageSiteWrapper;
+import com.hotlist.config.HotRabbitConfig;
 import com.hotlist.core.HotResource;
 import com.hotlist.core.filter.SerializeFilterRuler;
 import com.hotlist.utils.HotContext;
+import com.hotlist.utils.HotRabbitUtils;
 import com.hotlist.utils.HotSpringBeanUtils;
 import com.hotlist.utils.HotUtil;
 import lombok.Data;
 import org.springframework.data.redis.core.BoundListOperations;
-import org.springframework.data.redis.core.DefaultTypedTuple;
-import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Data
@@ -64,6 +66,7 @@ public class HotSiteEntity {
     }
 
     @JSONField(serialize = false)
+    @JsonIgnore
     public String getSaveKey() {
         return HotUtil.stringJoin("hot", "site", HotContext.getCurrentUser().getUserName(), alias, hotRankList, HotUtil.categoryJoin(hotRankListCategory), "pc");
     }
@@ -85,25 +88,32 @@ public class HotSiteEntity {
         HotSpringBeanUtils.getRedisTemplate().opsForHash().delete(getSiteHashKeyByCurrentUser(), objKey);
     }
     @JSONField(serialize = false)
+    @JsonIgnore
     public static String getSiteHashKeyByCurrentUser() {
         return HotUtil.stringJoin("hot", "site", HotContext.getCurrentUser().getUserName());
     }
 
     @JSONField(serialize = false)
+    @JsonIgnore
     public static String getResourceKey() {
         return HotUtil.stringJoin("hot", "site", HotContext.getCurrentUser().getUserName(), "res");
     }
 
+    public static String resourceObjKey(HotSiteEntity hotSite) {
+        return HotUtil.stringJoin(getResourceKey(), hotSite.getAlias(), hotSite.getHotRankList(),
+                HotUtil.categoryJoin(hotSite.getHotRankListCategory()), "pc");
+    }
+
     @SuppressWarnings("unchecked")
     public void saveByResource(List<Object> parsedResource) {
-        String objKey = HotUtil.stringJoin(getResourceKey(), alias, hotRankList, HotUtil.categoryJoin(hotRankListCategory), "pc");
-        Map<String, Object> map = new HashMap<>();
+        String resourceObjKey = resourceObjKey(this);
+        Map<String, Map<String, String>> indexMapping = new LinkedHashMap<>();
         parsedResource.forEach(item -> {
             Map<String, String> content = (Map<String, String>) item;
-            map.put(content.getOrDefault("title", ""), content);
+            indexMapping.put(content.getOrDefault("title", ""), content);
         });
 
-        BoundListOperations<String, Object> listOps = HotSpringBeanUtils.getRedisTemplate().boundListOps(objKey);
+        BoundListOperations<String, Object> listOps = HotSpringBeanUtils.getRedisTemplate().boundListOps(resourceObjKey);
         // TODO 这里目前是取redis中list所有元素，和当前内容作对比
         List<Object> range = listOps.range(0, -1);
         if (!CollectionUtils.isEmpty(range)) {
@@ -111,46 +121,47 @@ public class HotSiteEntity {
                 Map<String, String> content = (Map<String, String>) o;
                 String title = content.get("title");
                 // 跟当前的获取的content作对比
-                if (map.containsKey(title)) {
+                if (indexMapping.containsKey(title)) {
+                    String timeStamp = content.get("timeStamp");
                     listOps.remove(1, content);
+                    // 设置最初这个资源的获得时间
+                    indexMapping.get(title).put("timeStamp", timeStamp);
                 }
             }
         }
 
         // 反转保存
-        Object[] objects = new Object[parsedResource.size()];
-        for (int i = 0; i < parsedResource.size(); i++) objects[i] = parsedResource.get(parsedResource.size() - i - 1);
+        Object[] objects = reversal(indexMapping.entrySet());
         listOps.leftPushAll(objects);
 
-        // 记录刷新时间
-        HotSpringBeanUtils.stringRedisTemplate.opsForValue()
-                .set("refresh:" + objKey, String.valueOf(System.currentTimeMillis()));
+        // 发送刷新消息
+        String uuid = UUID.randomUUID().toString();
+        String refreshKey = HotUtil.stringJoin("refreshKey", HotSiteEntity.resourceObjKey(this));
+        HotSpringBeanUtils.stringRedisTemplate.opsForValue().set(refreshKey, uuid, 10, TimeUnit.MINUTES);
+        HotRabbitUtils.createResource(new MessageSiteWrapper(this, uuid));
     }
 
-//    @SuppressWarnings("unchecked")
-//    @Deprecated
-//    public static Set<ZSetOperations.TypedTuple<Object>> resolveParsedResource(List<Object> parsedResource) {
-//        List<ZSetOperations.TypedTuple<Object>> score = parsedResource.stream().map(res -> {
-//            Map<String, String> content = (Map<String, String>) res;
-//            return new DefaultTypedTuple<Object>(content.get("title") + "_" + content.get("score"), Double.valueOf(content.get("score")));
-//        }).collect(Collectors.toList());
-//
-//        Set<ZSetOperations.TypedTuple<Object>> ans = new HashSet<>(score.size());
-//        ans.addAll(score);
-//        return ans;
-//    }
-
+    private static Object[] reversal(Set<Map.Entry<String, Map<String, String>>> entries) {
+        Object[] array = entries.stream().map(Map.Entry::getValue).toArray();
+        int L = 0;
+        int R = array.length - 1;
+        while (L < R) {
+            Object temp = array[L];
+            array[L++] = array[R];
+            array[R--] = temp;
+        }
+        return array;
+    }
 
     @SuppressWarnings("unchecked")
     @JSONField(serialize = false)
     @JsonIgnore
     public List<Map<String, String>> getResource() {
-        String objKey = HotUtil.stringJoin(getResourceKey(), alias, hotRankList, HotUtil.categoryJoin(hotRankListCategory), "pc");
-        // 当前站点最后更新时间
-        String refreshTimestamp = HotSpringBeanUtils.stringRedisTemplate.opsForValue().get("refresh:" + objKey);
+        String resourceObjKey = resourceObjKey(this);
+        String refreshTimestamp = HotSpringBeanUtils.stringRedisTemplate.opsForValue().get("refreshKey:" + resourceObjKey);
         if (Objects.isNull(refreshTimestamp)) return null;
 
-        BoundListOperations<String, Object> listOps = HotSpringBeanUtils.redisTemplate.boundListOps(objKey);
+        BoundListOperations<String, Object> listOps = HotSpringBeanUtils.redisTemplate.boundListOps(resourceObjKey);
         List<Object> range = listOps.range(0, 49);
         if (!CollectionUtils.isEmpty(range))
             return range.stream().map(item -> (Map<String, String>) item).collect(Collectors.toList());

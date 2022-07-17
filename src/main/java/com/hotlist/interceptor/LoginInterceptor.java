@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -24,11 +25,11 @@ public class LoginInterceptor implements HandlerInterceptor {
         String authorization = request.getHeader("Authorization");
         try {
             hotCookie.validate(authorization.split(" ")[1]);
+            return true;
         } catch (Exception e) {
+//            response.sendRedirect("/login");
 //            e.printStackTrace();
             return false;
         }
-
-        return true;
     }
 }

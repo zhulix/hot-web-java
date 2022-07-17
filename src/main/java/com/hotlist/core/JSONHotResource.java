@@ -3,34 +3,28 @@ package com.hotlist.core;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
-import com.hotlist.config.HotRabbitConfig;
 import com.hotlist.core.filter.HotResultWrapper;
 import com.hotlist.entity.HotSiteEntity;
 import lombok.extern.slf4j.Slf4j;
 import ognl.Ognl;
 import ognl.OgnlException;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Component
 public class JSONHotResource extends HotResourceBase {
 
-    @Resource
-    private RabbitTemplate rabbitTemplate;
-
     @Override
     public void save(HotResultWrapper hotResultWrapper) {
         HotSiteEntity hotSite = hotResultWrapper.getHotSite();
         hotSite.saveByResource(hotResultWrapper.getParsedResourceAsList());
-        // TODO
-        rabbitTemplate.convertAndSend(HotRabbitConfig.RESOURCE_EXCHANGE, "resource.create", hotSite);
     }
 
     @Override
@@ -78,7 +72,7 @@ public class JSONHotResource extends HotResourceBase {
         jsonObjects.forEach(item -> {
             JSONObject json = (JSONObject) item;
             Map<String, String> content = new HashMap<>();
-//            content.put("score", String.valueOf(System.currentTimeMillis()));
+            content.put("timeStamp", String.valueOf(System.currentTimeMillis()));
             parseContent.keySet().forEach(k -> {
                 String key = parseContent.get(k);
 

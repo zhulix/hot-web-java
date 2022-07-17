@@ -2,7 +2,6 @@ package com.hotlist.utils;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -11,6 +10,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class HotSpringBeanUtils implements ApplicationContextAware {
+
+    public static RedisTemplate<String, Object> redisTemplate;
+
+    public static StringRedisTemplate stringRedisTemplate;
 
     public static RedisTemplate<String, Object> getRedisTemplate() {
         return redisTemplate;
@@ -21,14 +24,10 @@ public class HotSpringBeanUtils implements ApplicationContextAware {
         HotSpringBeanUtils.redisTemplate = redisTemplate;
     }
 
-    public static RedisTemplate<String, Object> redisTemplate;
-
     @Autowired
     public void setStringRedisTemplate(StringRedisTemplate stringRedisTemplate) {
         HotSpringBeanUtils.stringRedisTemplate = stringRedisTemplate;
     }
-
-    public static StringRedisTemplate stringRedisTemplate;
 
     public static <T> T getBean(Class<T> clazz) {
         return applicationContext.getBean(clazz);

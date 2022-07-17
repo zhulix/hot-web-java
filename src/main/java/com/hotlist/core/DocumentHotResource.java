@@ -1,6 +1,5 @@
 package com.hotlist.core;
 
-import com.hotlist.config.HotRabbitConfig;
 import com.hotlist.core.filter.HotResultWrapper;
 import com.hotlist.entity.HotSiteEntity;
 import lombok.extern.slf4j.Slf4j;
@@ -8,26 +7,18 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.seimicrawler.xpath.JXDocument;
 import org.seimicrawler.xpath.JXNode;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
 public class DocumentHotResource extends HotResourceBase {
 
-    @Resource
-    private RabbitTemplate rabbitTemplate;
-
     @Override
     public void save(HotResultWrapper hotResultWrapper) {
         HotSiteEntity hotSite = hotResultWrapper.getHotSite();
         hotSite.saveByResource(hotResultWrapper.getParsedResourceAsList());
-        // TODO
-        rabbitTemplate.convertAndSend(HotRabbitConfig.RESOURCE_EXCHANGE, "resource.create", hotSite);
     }
 
     @Override
@@ -69,15 +60,16 @@ public class DocumentHotResource extends HotResourceBase {
 
         Set<String> contentKeys = parseContentMap.keySet();
 
-        int childrenSize = jxNode.asElement().childrenSize();
+        int childrenSize = jxNode.asElement().childrenSize() + 1    ;
         List<Object> ans = new ArrayList<>(childrenSize);
 //        long l = System.currentTimeMillis();
 //        System.out.println(l);
         label:
-        for (int i = 0; i < childrenSize; i++) {
+        for (int i = 1; i < childrenSize; i++) {
             Map<String, String> content = new HashMap<>();
             for (String k : contentKeys) {
                 try {
+                    content.put("timeStamp", String.valueOf(System.currentTimeMillis()));
                     String v = parseContentMap.get(k);
                     JXNode node = jxNode.selOne(String.format(v, i));
                     String val;
