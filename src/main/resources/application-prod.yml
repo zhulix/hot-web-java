@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: hot-list-java
+  redis:
+    host: hotredis
+    port: 6379
+    database: 1
+    password: CTyA-m7hv
+  rabbitmq:
+    host: hotrabbit
+    listener:
+      simple:
+        acknowledge-mode: manual #手动ack
+      virtual-host: /hot
+elasticsearch:
+  host: 172.19.0.7
+  port: 9200
+mq-resource:
+  timeout-minute: 8 #8分钟刷新一次资源
+server:
+  port: 8081
+token:
+  privateKey: '1asd]uft87i3r,mnIO&^DF(@#'

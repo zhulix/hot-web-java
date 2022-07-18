@@ -4,7 +4,6 @@ import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hotlist.common.HotRankListCategory;
 import com.hotlist.common.to.MessageSiteWrapper;
-import com.hotlist.config.HotRabbitConfig;
 import com.hotlist.core.HotResource;
 import com.hotlist.core.filter.SerializeFilterRuler;
 import com.hotlist.utils.HotContext;
@@ -165,7 +164,7 @@ public class HotSiteEntity {
         List<Object> range = listOps.range(0, 49);
         if (!CollectionUtils.isEmpty(range))
             return range.stream().map(item -> (Map<String, String>) item).collect(Collectors.toList());
-        return null;
+        throw new RuntimeException("获取资源失败：初次获取失败");
     }
 
 }
