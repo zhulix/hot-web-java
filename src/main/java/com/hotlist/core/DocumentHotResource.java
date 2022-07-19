@@ -70,7 +70,6 @@ public class DocumentHotResource extends HotResourceBase {
             Map<String, String> content = new HashMap<>();
             for (String k : contentKeys) {
                 try {
-                    content.put("timeStamp", String.valueOf(System.currentTimeMillis()));
                     String v = parseContentMap.get(k);
                     JXNode node = jxNode.selOne(String.format(v, i));
                     String val;

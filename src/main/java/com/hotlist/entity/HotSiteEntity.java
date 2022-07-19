@@ -11,6 +11,7 @@ import com.hotlist.utils.HotRabbitUtils;
 import com.hotlist.utils.HotSpringBeanUtils;
 import com.hotlist.utils.HotUtil;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.BoundListOperations;
 import org.springframework.util.CollectionUtils;
 
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Data
+@Slf4j
 public class HotSiteEntity {
 
     private String siteName;
@@ -117,14 +119,15 @@ public class HotSiteEntity {
         List<Object> range = listOps.range(0, -1);
         if (!CollectionUtils.isEmpty(range)) {
             for (Object o : range) {
-                Map<String, String> content = (Map<String, String>) o;
-                String title = content.get("title");
+                Map<String, String> cachedContent = (Map<String, String>) o;
+                String title = cachedContent.get("title");
                 // 跟当前的获取的content作对比
                 if (indexMapping.containsKey(title)) {
-                    String timeStamp = content.get("timeStamp");
-                    listOps.remove(1, content);
+                    String timeStamp = cachedContent.get("timeStamp");
+                    listOps.remove(1, cachedContent);
                     // 设置最初这个资源的获得时间
-                    indexMapping.get(title).put("timeStamp", timeStamp);
+                    indexMapping.get(title).put("timeStamp",
+                            Objects.isNull(timeStamp) ? String.valueOf(System.currentTimeMillis()) : timeStamp);
                 }
             }
         }

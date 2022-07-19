@@ -70,7 +70,6 @@ public class JSONHotResource extends HotResourceBase {
         jsonObjects.forEach(item -> {
             JSONObject json = (JSONObject) item;
             Map<String, String> content = new HashMap<>();
-            content.put("timeStamp", String.valueOf(System.currentTimeMillis()));
             parseContent.keySet().forEach(k -> {
                 String key = parseContent.get(k);
 

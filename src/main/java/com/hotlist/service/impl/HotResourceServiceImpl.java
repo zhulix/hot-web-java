@@ -1,18 +1,21 @@
 package com.hotlist.service.impl;
 
 import com.hotlist.common.vo.HotCardSiteWrapperVo;
+import com.hotlist.core.HotResource;
+import com.hotlist.core.HotSiteInfoWrapper;
 import com.hotlist.entity.HotSiteEntity;
 import com.hotlist.service.HotRdbService;
 import com.hotlist.service.HotResourceService;
-import com.hotlist.core.HotSiteInfoWrapper;
-import com.hotlist.core.HotResource;
 import lombok.extern.slf4j.Slf4j;
-import ognl.Ognl;
-import ognl.OgnlException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -60,11 +63,26 @@ public class HotResourceServiceImpl implements HotResourceService {
         return result;
     }
 
+    @Retryable(maxAttempts = 5,
+            value = {RuntimeException.class},
+            backoff = @Backoff(delay = 2000L, multiplier = 1.5)
+    )
     @Override
     public void refreshResource(HotSiteEntity site) {
         HotSiteInfoWrapper wrapper = new HotSiteInfoWrapper(site);
         HotResource parserBeanObject = site.getParserBeanObject();
-        parserBeanObject.fetch(wrapper);
+        try {
+            parserBeanObject.fetch(wrapper);
+        } catch (Exception e) {
+            log.error("重试中...: {}", site.getSaveKey());
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Recover
+    public void refreshResourceCallback(RuntimeException e, HotSiteEntity site) {
+        log.error("站点重试请求失败：{}", site.getSaveKey());
+        throw e;
     }
 
     public List<Map<String, String>> getResourceByHotSite(HotSiteEntity hotSite) {
