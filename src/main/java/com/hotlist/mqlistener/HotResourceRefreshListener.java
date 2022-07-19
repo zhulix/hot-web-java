@@ -40,7 +40,6 @@ public class HotResourceRefreshListener {
             } catch (Exception e) {
                 log.info("站点刷新失败：{}，error：{}", site.getSaveKey(), e.getMessage());
                 channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
-                e.printStackTrace();
                 throw e;
             }
         } else {
