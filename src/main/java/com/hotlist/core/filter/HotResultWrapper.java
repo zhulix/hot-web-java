@@ -3,6 +3,7 @@ package com.hotlist.core.filter;
 import com.hotlist.entity.HotSiteEntity;
 
 import java.util.List;
+import java.util.Objects;
 
 
 public class HotResultWrapper {
@@ -11,7 +12,7 @@ public class HotResultWrapper {
      */
     @SuppressWarnings("unchecked")
     public List<Object> getParsedResourceAsList() {
-        return (List<Object>) parsedResource;
+        return Objects.isNull(parsedResource) ? null : (List<Object>) parsedResource;
     }
 
     public void setParsedResource(List<Object> parsedResource) {

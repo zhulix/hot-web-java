@@ -22,9 +22,7 @@ public class MessageAop {
         try {
             return joinPoint.proceed(args);
         } catch (Throwable e) {
-            MessageSiteWrapper arg = (MessageSiteWrapper) args[0];
-            HotRabbitUtils.sendLongerDelayQueue(arg);
-            log.error("资源刷新失败：{}", arg.getSite().getSaveKey());
+            HotRabbitUtils.sendLongerDelayQueue(args[0]);
             return null;
         } finally {
             HotContext.removeUser();

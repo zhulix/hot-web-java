@@ -10,11 +10,9 @@ import ognl.Ognl;
 import ognl.OgnlException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -23,8 +21,8 @@ public class JSONHotResource extends HotResourceBase {
 
     @Override
     public void save(HotResultWrapper hotResultWrapper) {
-        HotSiteEntity hotSite = hotResultWrapper.getHotSite();
-        hotSite.saveByResource(hotResultWrapper.getParsedResourceAsList());
+        if (!CollectionUtils.isEmpty(hotResultWrapper.getParsedResourceAsList()))
+            hotResultWrapper.getHotSite().saveByResource(hotResultWrapper.getParsedResourceAsList());
     }
 
     @Override

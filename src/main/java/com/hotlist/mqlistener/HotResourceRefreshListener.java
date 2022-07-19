@@ -37,10 +37,11 @@ public class HotResourceRefreshListener {
             try {
                 hotResourceService.refreshResource(site);
                 channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-                log.info("站点刷新完成：{}", site.getSaveKey());
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.info("站点刷新失败：{}，error：{}", site.getSaveKey(), e.getMessage());
                 channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
+                e.printStackTrace();
+                throw e;
             }
         } else {
             channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);

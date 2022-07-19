@@ -17,8 +17,8 @@ public class DocumentHotResource extends HotResourceBase {
 
     @Override
     public void save(HotResultWrapper hotResultWrapper) {
-        HotSiteEntity hotSite = hotResultWrapper.getHotSite();
-        hotSite.saveByResource(hotResultWrapper.getParsedResourceAsList());
+        if (Objects.nonNull(hotResultWrapper.getParsedResource()))
+            hotResultWrapper.getHotSite().saveByResource(hotResultWrapper.getParsedResourceAsList());
     }
 
     @Override
@@ -59,11 +59,12 @@ public class DocumentHotResource extends HotResourceBase {
 
 
         Set<String> contentKeys = parseContentMap.keySet();
+        int childrenSize;
+        if (Objects.nonNull(jxNode) && jxNode.isElement()) {
+            childrenSize = jxNode.asElement().childrenSize() + 1;
+        } else throw new RuntimeException("解析失败");
 
-        int childrenSize = jxNode.asElement().childrenSize() + 1    ;
         List<Object> ans = new ArrayList<>(childrenSize);
-//        long l = System.currentTimeMillis();
-//        System.out.println(l);
         label:
         for (int i = 1; i < childrenSize; i++) {
             Map<String, String> content = new HashMap<>();
@@ -88,7 +89,6 @@ public class DocumentHotResource extends HotResourceBase {
             }
             ans.add(content);
         }
-//        System.out.println(System.currentTimeMillis() - l);
         return ans;
     }
 }

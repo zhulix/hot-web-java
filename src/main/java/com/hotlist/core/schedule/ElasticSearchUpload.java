@@ -71,13 +71,13 @@ public class ElasticSearchUpload {
                 return model;
             }).collect(Collectors.toList());
             esModels.addAll(collect);
-            try {
-                saveByElasticSearch(esModels);
-                removeTodayRedisData(mySite);
-            } catch (IOException e) {
-                log.error("es上载失败");
-                HotSpringBeanUtils.redisTemplate.opsForList().leftPushAll("es:upload", "error", esModels.toArray());
-            }
+        }
+        try {
+            saveByElasticSearch(esModels);
+            removeTodayRedisData(mySite);
+        } catch (IOException e) {
+            log.error("es上载失败");
+            HotSpringBeanUtils.redisTemplate.opsForList().leftPushAll("es:upload", "error", esModels.toArray());
         }
         log.info("es job done...");
     }
