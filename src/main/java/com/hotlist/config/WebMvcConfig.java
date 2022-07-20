@@ -23,6 +23,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/u/mySiteCard")
                 .excludePathPatterns("/u/info")
                 .addPathPatterns("/u/**");
-        registry.addInterceptor(previewInterceptor).addPathPatterns("/u/mySiteCard", "/u/info");
+        registry.addInterceptor(previewInterceptor).addPathPatterns("/u/mySiteCard", "/u/info", "/s/**");
     }
 }

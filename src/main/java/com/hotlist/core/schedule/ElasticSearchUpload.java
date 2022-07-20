@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
+import com.alibaba.fastjson2.JSON;
 import com.hotlist.config.ElasticSearchConfig;
 import com.hotlist.entity.HotResourceESModel;
 import com.hotlist.entity.HotSiteEntity;
@@ -47,9 +48,8 @@ public class ElasticSearchUpload {
     @Scheduled(cron = "0 0 0 * * ?")
     @SuppressWarnings("unchecked")
     public void doUpload() {
-        log.info("es job running...");
         List<HotSiteEntity> mySite = managerService.getMySite();
-        List<HotResourceESModel> esModels = new ArrayList<>(256);
+        List<HotResourceESModel> esModels = new ArrayList<>(368);
         for (HotSiteEntity site : mySite) {
             String resourceObjKey = HotSiteEntity.resourceObjKey(site);
             BoundListOperations<String, Object> listOps = HotSpringBeanUtils.redisTemplate.boundListOps(resourceObjKey);
@@ -68,6 +68,10 @@ public class ElasticSearchUpload {
                         .setTimeStamp(format)
                         .setSiteName(site.getSiteName())
                         .setHotRankList(site.getHotRankList());
+                res.remove("address");
+                res.remove("title");
+                res.remove("timeStamp");
+                model.setSource(JSON.toJSONString(res));
                 return model;
             }).collect(Collectors.toList());
             esModels.addAll(collect);
@@ -79,7 +83,6 @@ public class ElasticSearchUpload {
             log.error("es上载失败");
             HotSpringBeanUtils.redisTemplate.opsForList().leftPushAll("es:upload", "error", esModels.toArray());
         }
-        log.info("es job done...");
     }
 
     public void saveByElasticSearch(List<HotResourceESModel> esModels) throws IOException {

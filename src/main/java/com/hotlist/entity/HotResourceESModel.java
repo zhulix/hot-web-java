@@ -24,12 +24,12 @@ public class HotResourceESModel {
 
     private String hotRankList;
 
+    private String source;
     @Override
     public String toString() {
-        return "HotResourceESModel{" +
+        return "{" +
                 "title='" + title + '\'' +
                 ", address='" + address + '\'' +
-                ", timeStamp=" + timeStamp +
                 ", siteName='" + siteName + '\'' +
                 '}';
     }
