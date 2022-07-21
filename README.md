@@ -1,12 +1,51 @@
 # 该站点是一个获取各大热门网站资源的聚合网站
 > 本人经常看今日热榜，和一些其他的站点，但是想看些其他内容，随做了一个可自定义的站点。
 > 等待后续继续提交代码完善项目。
-
+* 演示地址：https://hotagr.xyz
 ## 技术栈
-* 数据库：使用了redis作为数据库。（目前做了一半，感觉扩展性太差，后续考虑用MongoDB）
+* redis:6.2.6 - elasticSearch:7.14.2 - rabbitmq:3.9.21
+* 数据库：使用了redis作为数据库。
 * 前端：vue3+Element。挺简单的界面但真的做了好久，真就后端十分钟，前端两小时。
 
 ## 使用说明
+### elasticMapping
+```json
+{
+  "mappings": {
+    "properties": {
+      "uid": {
+        "type": "text", 
+        "index": false,
+        "doc_values": false
+      },
+      "title": {
+        "type": "text", 
+        "analyzer": "ik_max_word"
+      },
+      "address": {
+        "type": "keyword", 
+        "index": false,
+        "doc_values": false
+      },
+      "timeStamp": {
+        "type": "date",
+        "format": ["yyyy-MM-dd HH:mm:ss"]
+      },
+      "siteName": {
+        "type": "text"
+      },
+      "hotRankList": {
+        "type": "text"
+      },
+      "source": {
+        "type": "text",
+        "index": false,
+        "doc_values": false
+      }
+    }
+  }
+}
+```
 ### nginx映射
 ```
 location / {
