@@ -14,6 +14,9 @@ public class HotJavaApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(HotJavaApplication.class, args);
+        for (String arg : args) {
+            System.out.println("args:" + arg);
+        }
     }
 
 }
