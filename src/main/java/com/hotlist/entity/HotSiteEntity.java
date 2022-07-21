@@ -14,6 +14,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.BoundListOperations;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -122,13 +123,10 @@ public class HotSiteEntity {
                 Map<String, String> cachedContent = (Map<String, String>) o;
                 String title = cachedContent.get("title");
                 // 跟当前的获取的content作对比
-                if (indexMapping.containsKey(title)) {
-                    String timeStamp = cachedContent.get("timeStamp");
-                    listOps.remove(1, cachedContent);
-                    // 设置最初这个资源的获得时间
-                    indexMapping.get(title).put("timeStamp",
-                            Objects.isNull(timeStamp) ? String.valueOf(System.currentTimeMillis()) : timeStamp);
-                }
+                if (indexMapping.containsKey(title)) listOps.remove(1, cachedContent);
+                // 设置最初这个资源的获得时间
+                indexMapping.get(title).put("timeStamp",
+                        cachedContent.getOrDefault("timeStamp", String.valueOf(System.currentTimeMillis())));
             }
         }
 
