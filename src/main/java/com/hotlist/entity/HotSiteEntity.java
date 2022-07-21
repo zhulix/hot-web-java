@@ -112,6 +112,8 @@ public class HotSiteEntity {
         Map<String, Map<String, String>> indexMapping = new LinkedHashMap<>();
         parsedResource.forEach(item -> {
             Map<String, String> content = (Map<String, String>) item;
+            // 当前内容更新时间填充
+            content.put("timeStamp", String.valueOf(System.currentTimeMillis()));
             indexMapping.put(content.getOrDefault("title", ""), content);
         });
 
@@ -123,10 +125,12 @@ public class HotSiteEntity {
                 Map<String, String> cachedContent = (Map<String, String>) o;
                 String title = cachedContent.get("title");
                 // 跟当前的获取的content作对比
-                if (indexMapping.containsKey(title)) listOps.remove(1, cachedContent);
-                // 设置最初这个资源的获得时间
-                indexMapping.get(title).put("timeStamp",
-                        cachedContent.getOrDefault("timeStamp", String.valueOf(System.currentTimeMillis())));
+                if (indexMapping.containsKey(title)) {
+                    listOps.remove(1, cachedContent);
+                    // 设置最初这个资源的获得时间
+                    indexMapping.get(title).put("timeStamp",
+                            cachedContent.getOrDefault("timeStamp", String.valueOf(System.currentTimeMillis())));
+                }
             }
         }
 
