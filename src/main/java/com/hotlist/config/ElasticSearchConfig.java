@@ -18,7 +18,9 @@ public class ElasticSearchConfig {
     @Value("${elasticsearch.port}")
     private int port;
 
-    public static final String INDEXES = "hot-list-dev";
+    public static final String INDEXES = "hot-list-dev0";
+
+    public static final int size = 30;
 
 
     @Bean

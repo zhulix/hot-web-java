@@ -1,8 +1,10 @@
 package com.hotlist.common.vo;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 @Data
+@Accessors(chain = true)
 public class SearchResultVo {
     private String title;
 
@@ -13,4 +15,6 @@ public class SearchResultVo {
     private String siteName;
 
     private String hotRankList;
+
+//    private Object resource;
 }
