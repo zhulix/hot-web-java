@@ -117,6 +117,8 @@ location / {
 ### 前端
 * copy直接npm run dev
 ## 界面
+* search 
+![img_4.png](img_4.png)
 * 站点个性化
 ![img.png](img.png)
 ![img_3.png](img_3.png)

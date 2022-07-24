@@ -11,6 +11,7 @@ public class GlobalException {
 
     @ExceptionHandler({Exception.class})
     public R handleException(Exception e) {
+        e.printStackTrace();
         return R.error(e.getMessage());
     }
 
