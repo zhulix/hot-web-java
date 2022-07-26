@@ -1,0 +1,31 @@
+package com.hotlist.interceptor;
+
+import com.hotlist.utils.HotCookie;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@Component
+@Slf4j
+public class LoginCheckInterceptor implements HandlerInterceptor {
+
+    @Resource
+    private HotCookie hotCookie;
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        String authorization = request.getHeader("Authorization");
+        try {
+            hotCookie.validate(authorization.split(" ")[1]);
+            return true;
+        } catch (Exception e) {
+//            response.sendRedirect("/login");
+//            e.printStackTrace();
+            return false;
+        }
+    }
+}
