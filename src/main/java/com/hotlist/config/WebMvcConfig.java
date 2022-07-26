@@ -1,6 +1,6 @@
 package com.hotlist.config;
 
-import com.hotlist.interceptor.LoginInterceptor;
+import com.hotlist.interceptor.LoginCheckInterceptor;
 import com.hotlist.interceptor.PreviewInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -12,7 +12,7 @@ import javax.annotation.Resource;
 public class WebMvcConfig implements WebMvcConfigurer {
 
     @Resource
-    private LoginInterceptor loginInterceptor;
+    private LoginCheckInterceptor loginInterceptor;
 
     @Resource
     private PreviewInterceptor previewInterceptor;

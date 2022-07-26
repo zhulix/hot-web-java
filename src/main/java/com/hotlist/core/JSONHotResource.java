@@ -5,12 +5,13 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.hotlist.core.filter.HotResultWrapper;
 import com.hotlist.entity.HotSiteEntity;
+import com.hotlist.entity.UserEntity;
+import com.hotlist.service.ResourceService;
 import lombok.extern.slf4j.Slf4j;
 import ognl.Ognl;
 import ognl.OgnlException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,10 +20,16 @@ import java.util.stream.Collectors;
 @Component
 public class JSONHotResource extends HotResourceBase {
 
+    private final ResourceService resourceService;
+
+    public JSONHotResource(ResourceService resourceService) {
+        this.resourceService = resourceService;
+    }
+
     @Override
-    public void save(HotResultWrapper hotResultWrapper) {
-        if (!CollectionUtils.isEmpty(hotResultWrapper.getParsedResourceAsList()))
-            hotResultWrapper.getHotSite().saveByResource(hotResultWrapper.getParsedResourceAsList());
+    public void save(HotResultWrapper hotResultWrapper, UserEntity user) {
+        if (Objects.nonNull(hotResultWrapper.getParsedResource()))
+            resourceService.saveResource(hotResultWrapper.getParsedResourceAsList(), hotResultWrapper.getHotSite(), user);
     }
 
     @Override

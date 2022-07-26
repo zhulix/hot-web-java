@@ -19,8 +19,11 @@ public class HotCookie {
     @Value("${token.privateKey}")
     private String privateKey;
 
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
+
+    public HotCookie(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
+    }
 
     public String createToken(UserEntity user) {
         return JWT.create().withClaim("username", user.getUserName()).withExpiresAt(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000)).sign(Algorithm.HMAC256(privateKey));

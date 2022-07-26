@@ -1,11 +1,11 @@
 package com.hotlist.mqlistener;
 
 import com.hotlist.common.to.MessageSiteWrapper;
+import com.hotlist.dao.impl.HotSiteDAOImpl;
 import com.hotlist.entity.HotSiteEntity;
 import com.hotlist.service.HotResourceService;
 import com.hotlist.utils.HotContext;
 import com.hotlist.utils.HotSpringBeanUtils;
-import com.hotlist.utils.HotUtil;
 import com.rabbitmq.client.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -29,7 +29,8 @@ public class HotResourceRefreshListener {
     public void resourceRefresh(MessageSiteWrapper siteWrapper, Message message, Channel channel) throws IOException {
         HotSiteEntity site = siteWrapper.getSite();
         String uuid = siteWrapper.getUuid();
-        String refreshKey = HotUtil.stringJoin("refreshKey", HotSiteEntity.resourceObjKey(site));
+        String refreshKey = HotSiteDAOImpl.RedisKey.resourceRefreshKey(site, HotContext.getCurrentUser());
+//        String refreshKey = HotUtil.stringJoin("refreshKey", HotSiteEntity.resourceObjKey(site));
         // 分布式情况下，为了保证每个站点刷新次次数，不被多次消费刷新。所以这里需要考虑幂等情况
         // 当前消息跟rds中的uuid不匹配，直接确认消息。
         String refreshVal = HotSpringBeanUtils.stringRedisTemplate.opsForValue().get(refreshKey);

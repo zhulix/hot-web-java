@@ -6,9 +6,11 @@ import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import com.alibaba.fastjson2.JSON;
 import com.hotlist.config.ElasticSearchConfig;
+import com.hotlist.dao.impl.HotSiteDAOImpl;
 import com.hotlist.entity.HotResourceESModel;
 import com.hotlist.entity.HotSiteEntity;
 import com.hotlist.service.ManagerService;
+import com.hotlist.utils.HotContext;
 import com.hotlist.utils.HotSpringBeanUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,11 +50,11 @@ public class ElasticSearchUpload {
     @Scheduled(cron = "0 0 0 * * ?")
     @SuppressWarnings("unchecked")
     public void doUpload() {
-        List<HotSiteEntity> mySite = managerService.getMySite();
+        List<HotSiteEntity> mySite = managerService.getMySite(HotContext.getCurrentUser());
         List<HotResourceESModel> esModels = new ArrayList<>(368);
         for (HotSiteEntity site : mySite) {
-            String resourceObjKey = HotSiteEntity.resourceObjKey(site);
-            BoundListOperations<String, Object> listOps = HotSpringBeanUtils.redisTemplate.boundListOps(resourceObjKey);
+            String resourceListKey = HotSiteDAOImpl.RedisKey.resourceListKey(site, HotContext.getCurrentUser());
+            BoundListOperations<String, Object> listOps = HotSpringBeanUtils.redisTemplate.boundListOps(resourceListKey);
             List<Object> resList = listOps.range(0, -1);
 
             assert resList != null;
@@ -81,7 +83,7 @@ public class ElasticSearchUpload {
             removeTodayRedisData(mySite);
         } catch (IOException e) {
             log.error("es上载失败");
-            HotSpringBeanUtils.redisTemplate.opsForList().leftPushAll("es:upload", "error", esModels.toArray());
+            HotSpringBeanUtils.redisTemplate.opsForList().leftPushAll("es:upload:error", esModels.toArray());
         }
     }
 
@@ -109,8 +111,8 @@ public class ElasticSearchUpload {
 
     public void removeTodayRedisData(List<HotSiteEntity> mySite) {
         for (HotSiteEntity site : mySite) {
-            String resourceObjKey = HotSiteEntity.resourceObjKey(site);
-            BoundListOperations<String, Object> listOps = HotSpringBeanUtils.redisTemplate.boundListOps(resourceObjKey);
+            String resourceListKey = HotSiteDAOImpl.RedisKey.resourceListKey(site, HotContext.getCurrentUser());
+            BoundListOperations<String, Object> listOps = HotSpringBeanUtils.redisTemplate.boundListOps(resourceListKey);
             // 默认保留50条数据
             listOps.trim(0, 49);
         }

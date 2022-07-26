@@ -9,8 +9,7 @@ import java.util.List;
 public interface ManagerService {
 
 
-    List<HotSiteEntity> getMySite();
+    List<HotSiteEntity> getMySite(UserEntity user);
 
-    List<HotCardSiteWrapperVo> getMySiteResourceCard();
-
+    List<HotCardSiteWrapperVo> getMySiteResourceCard(UserEntity user);
 }

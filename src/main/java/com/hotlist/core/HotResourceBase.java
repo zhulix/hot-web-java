@@ -18,11 +18,12 @@ public abstract class HotResourceBase implements HotResource {
 
     /**
      * 获取网络资源
+     *
      * @param hotSiteInfoWrapper 1
      * @return 1
      */
     @Override
-    public List<Object> fetch(HotSiteInfoWrapper hotSiteInfoWrapper) {
+    public HotResultWrapper fetch(HotSiteInfoWrapper hotSiteInfoWrapper) {
 
         String fetchResource = fetchResource(hotSiteInfoWrapper.hotSite);
 
@@ -32,12 +33,8 @@ public abstract class HotResourceBase implements HotResource {
         HotResultWrapper hotResultWrapper = parseResource(resourceParser);
 
         resolve(hotResultWrapper, resourceParser);
-
-        List<Object> parsedResource = hotResultWrapper.getParsedResourceAsList();
-
         hotResultWrapper.setHotSite(hotSiteInfoWrapper.hotSite);
-        save(hotResultWrapper);
-        return parsedResource;
+        return hotResultWrapper;
     }
 
     /**

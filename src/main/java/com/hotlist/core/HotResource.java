@@ -1,14 +1,13 @@
 package com.hotlist.core;
 
 import com.hotlist.core.filter.HotResultWrapper;
-
-import java.util.List;
+import com.hotlist.entity.UserEntity;
 
 public interface HotResource {
 
-    List<Object> fetch(HotSiteInfoWrapper hotSiteInfoWrapper);
+    HotResultWrapper fetch(HotSiteInfoWrapper hotSiteInfoWrapper);
 
-    default void save(HotResultWrapper hotResultWrapper) {
+    default void save(HotResultWrapper hotResultWrapper, UserEntity user) {
         throw new RuntimeException("[save] method not implement");
     }
 

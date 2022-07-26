@@ -5,8 +5,6 @@ import com.hotlist.entity.UserEntity;
 
 public class HotContext {
 
-//    UserEntity user;
-
     private static final ThreadLocal<UserEntity> USER_ENTITY_THREAD_LOCAL = new ThreadLocal<>();
 
     public static UserEntity getCurrentUser() {

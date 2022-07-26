@@ -1,6 +1,9 @@
 package com.hotlist.service.impl;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ScoreSort;
+import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.SortOptionsVariant;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
@@ -71,7 +74,14 @@ public class SearchServiceImpl implements SearchService {
         builder.highlight(h -> h
                 .fields("title", fn -> fn.preTags("<span style='color: #F56C6C;'>").postTags("</span>"))
         );
-        builder.sort(s -> s.field(f -> f.field("timeStamp").order(SortOrder.Desc)));
+
+        // 时间顺序，相关性顺序。二选一
+        if (Objects.nonNull(searchDto.getSort()) && searchDto.getSort().equals("related")) {
+            builder.sort(fn -> fn.score(new ScoreSort.Builder().build()));
+        } else {
+            builder.sort(s -> s.field(f -> f.field("timeStamp").order(SortOrder.Desc)));
+        }
+
         return builder.build();
     }
 

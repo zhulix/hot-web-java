@@ -2,6 +2,8 @@ package com.hotlist.core;
 
 import com.hotlist.core.filter.HotResultWrapper;
 import com.hotlist.entity.HotSiteEntity;
+import com.hotlist.entity.UserEntity;
+import com.hotlist.service.ResourceService;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -15,10 +17,16 @@ import java.util.*;
 @Component
 public class DocumentHotResource extends HotResourceBase {
 
+    public DocumentHotResource(ResourceService resourceService) {
+        this.resourceService = resourceService;
+    }
+
+    private final ResourceService resourceService;
+
     @Override
-    public void save(HotResultWrapper hotResultWrapper) {
+    public void save(HotResultWrapper hotResultWrapper, UserEntity user) {
         if (Objects.nonNull(hotResultWrapper.getParsedResource()))
-            hotResultWrapper.getHotSite().saveByResource(hotResultWrapper.getParsedResourceAsList());
+            resourceService.saveResource(hotResultWrapper.getParsedResourceAsList(), hotResultWrapper.getHotSite(), user);
     }
 
     @Override

@@ -70,7 +70,4 @@ public class HotRabbitConfig {
         return new Binding(resource_refresh_longer_delay_queue, Binding.DestinationType.QUEUE, RESOURCE_EXCHANGE, "resource.longer.delay", null);
     }
     // 任务调度job完成
-
-//    @Bean
-//    public Queue resourceScoreQueue() {}
 }

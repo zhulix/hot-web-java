@@ -31,8 +31,6 @@ public class RedisConfig {
 
     private final String PASSWORD;
 
-    private final AtomicInteger index = new AtomicInteger(-1);
-
     public RedisConfig(
             @Value("${spring.redis.host}") String host,
             @Value("${spring.redis.port}") int port,

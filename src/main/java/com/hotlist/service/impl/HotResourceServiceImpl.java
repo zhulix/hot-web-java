@@ -1,53 +1,49 @@
 package com.hotlist.service.impl;
 
+import com.hotlist.common.to.MessageSiteWrapper;
 import com.hotlist.common.vo.HotCardSiteWrapperVo;
 import com.hotlist.core.HotResource;
 import com.hotlist.core.HotSiteInfoWrapper;
+import com.hotlist.core.filter.HotResultWrapper;
+import com.hotlist.dao.impl.ResourceDAOImpl;
 import com.hotlist.entity.HotSiteEntity;
-import com.hotlist.service.HotRdbService;
+import com.hotlist.entity.UserEntity;
 import com.hotlist.service.HotResourceService;
+import com.hotlist.service.ResourceService;
+import com.hotlist.utils.HotContext;
+import com.hotlist.utils.HotRabbitUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Slf4j
 @Service
 public class HotResourceServiceImpl implements HotResourceService {
 
-    @Resource
-    private HotRdbService hotRdbService;
-    @Override
-    public List<Object> getResourceByKey(String key) {
-        List<Object> obj = getResCacheByKey(key);
-        if (obj != null) return obj;
+    private final ResourceService resourceService;
 
-        HotSiteEntity hotSite = hotRdbService.getConfigByKey(key);
-        HotResource hotResource = hotSite.getParserBeanObject();
-        HotSiteInfoWrapper wrapper = new HotSiteInfoWrapper(hotSite);
-        return hotResource.fetch(wrapper);
-    }
+    private final StringRedisTemplate stringRedisTemplate;
 
-    private List<Object> getResCacheByKey(String key) {
-        return (List<Object>) hotRdbService.getResourceByKey(key);
+    public HotResourceServiceImpl(ResourceService resourceService,
+                                  StringRedisTemplate stringRedisTemplate) {
+        this.resourceService = resourceService;
+        this.stringRedisTemplate = stringRedisTemplate;
     }
 
     @Override
-    public List<HotCardSiteWrapperVo> getResourceByHotSites(List<HotSiteEntity> mySites) {
+    public List<HotCardSiteWrapperVo> getResourceByHotSites(List<HotSiteEntity> mySites, UserEntity user) {
         List<HotCardSiteWrapperVo> result = new ArrayList<>(mySites.size());
         for (HotSiteEntity site : mySites) {
 
             try {
                 HotCardSiteWrapperVo hotCardSiteWrapperVo = new HotCardSiteWrapperVo();
                 // 原始资源list
-                List<Map<String, String>> resourceByHotSite = getResourceByHotSite(site);
+                List<Map<String, String>> resourceByHotSite = getResourceByHotSite(site, user);
                 hotCardSiteWrapperVo.setResultSite(resourceByHotSite);
                 hotCardSiteWrapperVo.setSort(1);
                 hotCardSiteWrapperVo.setSiteName(site.getSiteName());
@@ -72,7 +68,8 @@ public class HotResourceServiceImpl implements HotResourceService {
         HotSiteInfoWrapper wrapper = new HotSiteInfoWrapper(site);
         HotResource parserBeanObject = site.getParserBeanObject();
         try {
-            parserBeanObject.fetch(wrapper);
+            HotResultWrapper resultWrapper = parserBeanObject.fetch(wrapper);
+            parserBeanObject.save(resultWrapper, HotContext.getCurrentUser());
         } catch (Exception e) {
             log.error("重试中...: {}", site.getSaveKey());
             throw new RuntimeException(e);
@@ -85,14 +82,14 @@ public class HotResourceServiceImpl implements HotResourceService {
         throw e;
     }
 
-    public List<Map<String, String>> getResourceByHotSite(HotSiteEntity hotSite) {
-        List<Map<String, String>> obj = hotSite.getResource();
-        if (obj != null) return obj;
-        HotResource hotResource = hotSite.getParserBeanObject();
-        HotSiteInfoWrapper wrapper = new HotSiteInfoWrapper(hotSite);
-        // 请求资源，并投递刷新消息（死信队列）
-        List<Object> fetch = hotResource.fetch(wrapper);
-        return fetch.stream().map(o -> (Map<String, String>) o).collect(Collectors.toList());
+    public List<Map<String, String>> getResourceByHotSite(HotSiteEntity hotSite, UserEntity user) {
+        String refresh = stringRedisTemplate.opsForValue().get(ResourceDAOImpl.RedisKey.resourceRefreshKey(hotSite, user));
+        if (Objects.isNull(refresh)) {
+            // refresh未获取到：表示未在10分种内刷新这个站点资源。这时发消息给mq更新即可
+            // 在这里初次访问网页完成初始化
+            HotRabbitUtils.sendRefreshResourceNow(new MessageSiteWrapper(hotSite, UUID.randomUUID().toString()));
+        }
+        return resourceService.findResourceByUser(hotSite, user);
     }
 
 }
